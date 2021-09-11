@@ -24,12 +24,17 @@ def tree_plot(
         if node.cls == -1:
             if type(model) == CARTClassifier:
                 if feature_names is not None:
-                    attr = "{}={}?".format(
+                    attr = "{}{}{}?".format(
                         feature_names[node.split_attr],
+                        "≤" if node.continuous else "=",
                         node.threshold,
                     )
                 else:
-                    attr = "x[{}]≤{}?".format(node.split_attr, node.threshold)
+                    attr = "x[{}]{}{}?".format(
+                        node.split_attr,
+                        "≤" if node.continuous else "=",
+                        node.threshold,
+                    )
                 g.node('node{}'.format(node_id), label=attr, fontname=font)
                 g.node('node%d' % node_id, label=attr)
                 left, right = node.children
