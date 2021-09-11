@@ -116,6 +116,9 @@ class CARTClassifier(C4_5Classifier):
                 leaf.predict_list = None
         return pred
 
+    def score(self, test_X, test_y):
+        return super().score(test_X, test_y)
+
     def get_best_attr(self, id_list, attr_set):
         X, y = self.X[id_list], self.y[id_list]
 
@@ -239,10 +242,8 @@ class CARTRegressor(CARTClassifier):
                     CARTNode(depth=node.depth + 1),
                     CARTNode(depth=node.depth + 1),
                 )
-                stack.append(
-                    (node.children[1], right, attr_set.copy()))
-                stack.append(
-                    (node.children[0], left, attr_set.copy()))
+                stack.append((node.children[1], right, attr_set.copy()))
+                stack.append((node.children[0], left, attr_set.copy()))
 
         self.depth = max([leaf.depth for leaf in self.leaf_list])
         self.n_leaf = len(self.leaf_list)
@@ -250,6 +251,12 @@ class CARTRegressor(CARTClassifier):
 
     def predict(self, X):
         return super().predict(X)
+
+    def score(self, test_X, test_y):
+        X = np.array(test_X).reshape(-1, self.n_features)
+        y = np.array(test_y)
+        pred = self.predict(X)
+        return -np.mean((y - pred)**2)
 
     def get_best_attr(self, id_list, attr_set):
         X, y = self.X[id_list], self.y[id_list]
