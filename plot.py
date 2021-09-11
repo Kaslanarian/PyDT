@@ -1,6 +1,6 @@
 from graphviz import Digraph
 from os import remove
-from CART import CARTClassifier
+from CART import CARTClassifier, CARTRegressor
 
 
 def tree_plot(
@@ -21,7 +21,7 @@ def tree_plot(
     stack = [(model.root, i)]
     while len(stack) > 0:
         node, node_id = stack.pop()
-        if node.cls == -1:
+        if node.value == None:
             if type(model) == CARTClassifier:
                 if feature_names is not None:
                     attr = "{}{}{}?".format(
@@ -79,15 +79,18 @@ def tree_plot(
                     stack.append((child, i))
         else:
             if target_names is not None:
-                cls = target_names[node.cls]
+                value = target_names[node.value]
             else:
-                cls = "class_{}".format(node.cls)
+                value = "{}{}".format(
+                    "" if type(model) == CARTRegressor else "class_",
+                    node.value)
             g.node(
                 'node{}'.format(node_id),
-                label=cls,
+                label=value,
                 shape='box',
                 fontname=font,
             )
 
     g.view(filename=filename)
     remove(filename)
+    return 0
