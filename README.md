@@ -11,6 +11,7 @@
   - [决策树绘制](#决策树绘制)
     - [回归树](#回归树)
     - [决策树](#决策树)
+  - [调参](#调参)
 
 ## ID3
 
@@ -190,3 +191,46 @@ tree_plot(
 由于生成的回归树很大，我们限制最大深度再绘制：
 
 ![regression](src/boston_tree.png)
+
+## 调参
+
+CART和C4.5都是有超参数的，我们让它们作为`sklearn.base.BaseEstimator`的派生类，借助`sklearn`的GridSearchCV，就可以实现调参：
+
+```python
+from plot import tree_plot
+from CART import CARTClassifier
+from sklearn.datasets import load_wine
+from sklearn.model_selection import train_test_split, GridSearchCV
+
+wine = load_wine()
+train_X, test_X, train_y, test_y = train_test_split(
+    wine.data,
+    wine.target,
+    train_size=0.7,
+)
+model = CARTClassifier()
+grid_param = {
+    'max_depth': [2, 4, 6, 8, 10],
+    'min_samples_leaf': [1, 3, 5, 7],
+}
+
+search = GridSearchCV(model, grid_param, n_jobs=4, verbose=5)
+search.fit(train_X, train_y)
+best_model = search.best_estimator_
+print(search.best_params_, search.best_estimator_.score(test_X, test_y))
+tree_plot(
+    best_model,
+    feature_names=wine.feature_names,
+    target_names=wine.target_names,
+)
+```
+
+输出最优参数和最优模型在测试集上的表现：
+
+```python
+{'max_depth': 4, 'min_samples_leaf': 3} 0.8518518518518519
+```
+
+绘制对应的决策树：
+
+![wine](src/wine_tree.png)
