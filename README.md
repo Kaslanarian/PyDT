@@ -9,8 +9,8 @@
     - [分类](#分类)
     - [回归](#回归)
   - [决策树绘制](#决策树绘制)
+    - [分类树](#分类树)
     - [回归树](#回归树)
-    - [决策树](#决策树)
   - [调参](#调参)
 
 ## ID3
@@ -110,7 +110,7 @@ print(mean_squared_error(test_y, pred))
 
 ## 决策树绘制
 
-### 回归树
+### 分类树
 
 利用python3的graphviz第三方库和[Graphviz](https://graphviz.org/)(需要安装)，我们可以将决策树可视化：
 
@@ -170,7 +170,7 @@ tree_plot(
 
 ![watermelon](src/watermelon_tree.png)
 
-### 决策树
+### 回归树
 
 用同样的方法，我们可以进行回归树的绘制：
 
