@@ -19,6 +19,8 @@ class ID3Classifier():
     '''
     def __init__(self) -> None:
         super().__init__()
+        self.n_leaf = 0
+        self.depth = 0
 
     def fit(self, X, y):
         self.X, self.y = np.array(X), np.array(y).reshape(-1).astype('int')
@@ -54,7 +56,7 @@ class ID3Classifier():
                     else:
                         stack.append(
                             (node.children[u], child_id_list, copy_set))
-        
+
         self.n_leaf = len(self.leaf_list)
         return self
 
