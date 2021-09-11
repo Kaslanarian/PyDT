@@ -21,7 +21,7 @@ class C4_5Classifier(BaseEstimator):
     def __init__(
         self,
         max_depth=np.inf,
-        min_samples_split=1,
+        min_samples_split=2,
         min_samples_leaf=1,
     ) -> None:
         '''
@@ -76,14 +76,20 @@ class C4_5Classifier(BaseEstimator):
                     index_left = X_attr <= node.threshold
                     index_right = np.logical_not(index_left)
                     node.continuous = True
+                    left, right = id_list[index_left], id_list[index_right]
+
+                    if min(len(left), len(right)) < self.min_samples_leaf:
+                        node.value = prior
+                        self.leaf_list.append(node)
+                        continue
+
                     node.children = (
                         C4_5Node(depth=node.depth + 1),
                         C4_5Node(depth=node.depth + 1),
                     )
-                    stack.append((node.children[1], id_list[index_right],
-                                  attr_set.copy()))
-                    stack.append((node.children[0], id_list[index_left],
-                                  attr_set.copy()))
+                    
+                    stack.append((node.children[1], right, attr_set.copy()))
+                    stack.append((node.children[0], left, attr_set.copy()))
                 else:  # 离散属性
                     unique = np.unique(self.X[:, node.split_attr])
                     for u in unique:
@@ -96,7 +102,8 @@ class C4_5Classifier(BaseEstimator):
                         else:
                             stack.append((node.children[u], child_id_list,
                                           attr_set.copy()))
-        
+
+        self.depth = max([leaf.depth for leaf in self.leaf_list])
         self.n_leaf = len(self.leaf_list)
         return self
 

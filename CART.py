@@ -19,7 +19,7 @@ class CARTNode(C4_5Node):
 class CARTClassifier(C4_5Classifier):
     def __init__(self,
                  max_depth=np.inf,
-                 min_samples_split=1,
+                 min_samples_split=2,
                  min_samples_leaf=1) -> None:
         super().__init__(max_depth=max_depth,
                          min_samples_split=min_samples_split,
@@ -65,6 +65,13 @@ class CARTClassifier(C4_5Classifier):
                 else:  # 离散属性
                     index_left = node_X[:, node.split_attr] == node.threshold
                 index_right = np.logical_not(index_left)
+                left, right = id_list[index_left], id_list[index_right]
+
+                if min(len(left), len(right)) < self.min_samples_leaf:
+                    node.value = prior
+                    self.leaf_list.append(node)
+                    continue
+
                 node.children = (
                     CARTNode(depth=node.depth + 1),
                     CARTNode(depth=node.depth + 1),
@@ -74,6 +81,7 @@ class CARTClassifier(C4_5Classifier):
                 stack.append(
                     (node.children[0], id_list[index_left], attr_set.copy()))
 
+        self.depth = max([leaf.depth for leaf in self.leaf_list])
         self.n_leaf = len(self.leaf_list)
         return self
 
@@ -220,17 +228,23 @@ class CARTRegressor(CARTClassifier):
                 else:  # 离散属性
                     index_left = node_X[:, node.split_attr] == node.threshold
                 index_right = np.logical_not(index_left)
-                # if len(id_list[index_right]) == 0:
-                # print(X_attr, attr_set)
+                left, right = id_list[index_left], id_list[index_right]
+
+                if min(len(left), len(right)) < self.min_samples_leaf:
+                    node.value = prior
+                    self.leaf_list.append(node)
+                    continue
+
                 node.children = (
                     CARTNode(depth=node.depth + 1),
                     CARTNode(depth=node.depth + 1),
                 )
                 stack.append(
-                    (node.children[1], id_list[index_right], attr_set.copy()))
+                    (node.children[1], right, attr_set.copy()))
                 stack.append(
-                    (node.children[0], id_list[index_left], attr_set.copy()))
+                    (node.children[0], left, attr_set.copy()))
 
+        self.depth = max([leaf.depth for leaf in self.leaf_list])
         self.n_leaf = len(self.leaf_list)
         return self
 
