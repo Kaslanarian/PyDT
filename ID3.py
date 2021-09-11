@@ -2,10 +2,10 @@ import numpy as np
 
 
 class ID3Node:
-    def __init__(self, split_attr=-1, cls=-1) -> None:
+    def __init__(self, split_attr=-1, value=None) -> None:
         self.split_attr: int = split_attr
         self.children: dict = {}
-        self.cls: int = cls
+        self.value: int = value
         self.continuous = False
         self.predict_list = None
 
@@ -37,7 +37,7 @@ class ID3Classifier():
             prior = unique[np.argmax(counts)]
             if len(unique) == 1 or len(np.unique(
                     node_X[:, attr_set], axis=0)) == 1 or len(attr_set) == 0:
-                node.cls = prior
+                node.value = prior
                 self.leaf_list.append(node)
             else:
                 node.split_attr = self.get_best_attr(id_list, attr_set)
@@ -54,6 +54,8 @@ class ID3Classifier():
                     else:
                         stack.append(
                             (node.children[u], child_id_list, copy_set))
+        
+        self.n_leaf = len(self.leaf_list)
         return self
 
     def predict(self, X):
@@ -61,7 +63,7 @@ class ID3Classifier():
         stack = [(self.root, np.arange(len(X)))]
         while len(stack) > 0:
             node, id_list = stack.pop()
-            if node.cls == -1:
+            if node.value is None:
                 data = X[id_list]
                 for attr_value, child in node.children.items():
                     stack.append((
@@ -73,7 +75,7 @@ class ID3Classifier():
         pred = np.zeros(len(X))
         for leaf in self.leaf_list:
             if leaf.predict_list is not None:
-                pred[leaf.predict_list] = leaf.cls
+                pred[leaf.predict_list] = leaf.value
                 leaf.predict_list = None
         return pred
 

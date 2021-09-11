@@ -7,11 +7,11 @@ class C4_5Node(ID3Node):
     def __init__(
         self,
         split_attr=-1,
-        cls=-1,
+        value=None,
         depth=0,
         continuous=False,
     ) -> None:
-        super().__init__(split_attr=split_attr, cls=cls)
+        super().__init__(split_attr=split_attr, value=value)
         self.depth = depth
         self.threshold: float = None
         self.continuous = continuous
@@ -42,7 +42,6 @@ class C4_5Classifier(BaseEstimator):
         # 确定各列属性是连续还是离散
         self.continue_attr = [C4_5Classifier.is_number(x) for x in X[0]]
         self.X, self.y = np.array(X), np.array(y)
-        print(self.continue_attr)
         # self.X的类型不再是数字，而是Object
         self.n_features = self.X.shape[1]
         self.leaf_list = []
@@ -66,7 +65,7 @@ class C4_5Classifier(BaseEstimator):
             ) == 0 or len(np.unique(node_X[:, attr_set], axis=0)) == 1 or len(
                     id_list
             ) <= self.min_samples_split or node.depth >= self.max_depth:
-                node.cls = prior
+                node.value = prior
                 self.leaf_list.append(node)
             else:
                 node.split_attr, (_, _, node.threshold) = self.get_best_attr(
@@ -92,11 +91,13 @@ class C4_5Classifier(BaseEstimator):
                         child_id_list = id_list[node_X[:,
                                                        node.split_attr] == u]
                         if len(child_id_list) == 0:  # 某特征在当前节点不存在
-                            node.children[u].cls = prior
+                            node.children[u].value = prior
                             self.leaf_list.append(node.children[u])
                         else:
                             stack.append((node.children[u], child_id_list,
                                           attr_set.copy()))
+        
+        self.n_leaf = len(self.leaf_list)
         return self
 
     def get_best_attr(self, id_list, attr_set):
@@ -162,7 +163,7 @@ class C4_5Classifier(BaseEstimator):
         stack.append((self.root, np.arange(len(X))))
         while len(stack) > 0:
             node, id_list = stack.pop()
-            if node.cls == -1:
+            if node.value is None:
                 data = X[id_list]
                 if node.continuous:
                     index_left = data[:, node.split_attr].astype(
@@ -187,7 +188,7 @@ class C4_5Classifier(BaseEstimator):
         pred = np.zeros(len(X), dtype='int')
         for leaf in self.leaf_list:
             if leaf.predict_list is not None:
-                pred[leaf.predict_list] = leaf.cls
+                pred[leaf.predict_list] = leaf.value
                 leaf.predict_list = None
         return pred
 
