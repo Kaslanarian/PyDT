@@ -22,15 +22,15 @@ def tree_plot(
     while len(stack) > 0:
         node, node_id = stack.pop()
         if node.value == None:
-            if type(model) == CARTClassifier:
+            if type(model) in {CARTClassifier, CARTRegressor}:
                 if feature_names is not None:
-                    attr = "{}{}{}?".format(
+                    attr = "{}{}{:.3f}?".format(
                         feature_names[node.split_attr],
                         "≤" if node.continuous else "=",
                         node.threshold,
                     )
                 else:
-                    attr = "x[{}]{}{}?".format(
+                    attr = "x[{}]{}{:.3f}?".format(
                         node.split_attr,
                         "≤" if node.continuous else "=",
                         node.threshold,
