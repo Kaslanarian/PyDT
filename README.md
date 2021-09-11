@@ -6,7 +6,11 @@
   - [ID3](#id3)
   - [C4.5](#c45)
   - [CART](#cart)
+    - [分类](#分类)
+    - [回归](#回归)
   - [决策树绘制](#决策树绘制)
+    - [回归树](#回归树)
+    - [决策树](#决策树)
 
 ## ID3
 
@@ -61,7 +65,9 @@ print(np.mean(pred == y))
 
 ## CART
 
-CART(Classification and Regression Tree)是C4.5决策树的扩展，支持分类和回归。目前我们只实现了分类，CART分类树算法使用基尼系数选择特征，此外对于离散特征，CART决策树在每个节点二分划分，缓解了过拟合。
+### 分类
+
+CART(Classification and Regression Tree)是C4.5决策树的扩展，支持分类和回归。CART分类树算法使用基尼系数选择特征，此外对于离散特征，CART决策树在每个节点二分划分，缓解了过拟合。
 
 这里我们用`sklearn`中的鸢尾花数据集测试：
 
@@ -81,7 +87,29 @@ print(accuracy_score(test_y, pred))
 
 准确率95.55%。
 
+### 回归
+
+`CARTRegressor`类实现了决策树回归，以`sklearn`的波士顿数据集为例：
+
+```python
+from CART import CARTRegressor
+from sklearn.datasets import load_boston
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+X, y = load_boston(return_X_y=True)
+train_X, test_X, train_y, test_y = train_test_split(X, y, train_size=0.7)
+model = CARTRegressor()
+model.fit(train_X, train_y)
+pred = model.predict(test_X)
+print(mean_squared_error(test_y, pred))
+```
+
+输出26.352171052631576，sklearn决策树回归的Baseline是22.46，性能近似，说明我们的实现正确。
+
 ## 决策树绘制
+
+### 回归树
 
 利用python3的graphviz第三方库和[Graphviz](https://graphviz.org/)(需要安装)，我们可以将决策树可视化：
 
@@ -140,3 +168,25 @@ tree_plot(
 这里要自定义字体，否则无法显示中文：
 
 ![watermelon](src/watermelon_tree.png)
+
+### 决策树
+
+用同样的方法，我们可以进行回归树的绘制：
+
+```python
+from plot import tree_plot
+from ID3 import ID3Classifier
+from sklearn.datasets import load_boston
+
+boston = load_boston()
+model = ID3Classifier(max_depth=5)
+model.fit(boston.data, boston.target)
+tree_plot(
+    model,
+    feature_names=boston.feature_names,
+)
+```
+
+由于生成的回归树很大，我们限制最大深度再绘制：
+
+![regression](src/boston_tree.png)
