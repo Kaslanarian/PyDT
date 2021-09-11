@@ -24,6 +24,13 @@ class C4_5Classifier(BaseEstimator):
         min_samples_split=1,
         min_samples_leaf=1,
     ) -> None:
+        '''
+        Parameters
+        ----------
+        `max_depth`: 决策树最大深度，默认是不设限的，也就是inf
+        `min_samples_split`: 生成节点的样本数下限，低于该下限则不再进行划分，整数则视为样本数，小数则视为占训练样本百分比
+        `max_samples_leaf`: 叶节点样本数下限，整数则视为样本数，小数则视为占训练样本百分比
+        '''
         super().__init__()
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
