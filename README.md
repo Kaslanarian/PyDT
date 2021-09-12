@@ -12,6 +12,7 @@
     - [分类树](#分类树)
     - [回归树](#回归树)
   - [调参](#调参)
+  - [剪枝](#剪枝)
 
 ## ID3
 
@@ -234,3 +235,9 @@ tree_plot(
 绘制对应的决策树：
 
 ![wine](src/wine_tree.png)
+
+## 剪枝
+
+目前只有C4.5支持REP剪枝，`wine`数据下，进行剪枝，前后的决策树：
+
+<img src="src/pre_prune.png" alt="pre" style="zoom: 50%;" /><img src="src/post_prune.png" alt="pre" style="zoom: 50%;" />
