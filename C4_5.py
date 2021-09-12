@@ -1,6 +1,7 @@
 import numpy as np
 from ID3 import ID3Node
 from sklearn.base import BaseEstimator
+from copy import deepcopy
 
 
 class C4_5Node(ID3Node):
@@ -10,11 +11,14 @@ class C4_5Node(ID3Node):
         value=None,
         depth=0,
         continuous=False,
+        parent=None,
     ) -> None:
         super().__init__(split_attr=split_attr, value=value)
         self.depth = depth
         self.threshold: float = None
         self.continuous = continuous
+        self.parent = parent
+        self.train_list = None
 
 
 class C4_5Classifier(BaseEstimator):
@@ -35,8 +39,6 @@ class C4_5Classifier(BaseEstimator):
         self.max_depth = max_depth
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
-        self.depth = 0
-        self.n_leaf = 0
 
     def fit(self, X, y):
         # 确定各列属性是连续还是离散
@@ -66,6 +68,7 @@ class C4_5Classifier(BaseEstimator):
                     id_list
             ) <= self.min_samples_split or node.depth >= self.max_depth:
                 node.value = prior
+                node.train_list = id_list
                 self.leaf_list.append(node)
             else:
                 node.split_attr, (_, _, node.threshold) = self.get_best_attr(
@@ -80,12 +83,13 @@ class C4_5Classifier(BaseEstimator):
 
                     if min(len(left), len(right)) < self.min_samples_leaf:
                         node.value = prior
+                        node.train_list = id_list
                         self.leaf_list.append(node)
                         continue
 
                     node.children = (
-                        C4_5Node(depth=node.depth + 1),
-                        C4_5Node(depth=node.depth + 1),
+                        C4_5Node(depth=node.depth + 1, parent=node),
+                        C4_5Node(depth=node.depth + 1, parent=node),
                     )
 
                     stack.append((node.children[1], right, attr_set.copy()))
@@ -93,7 +97,8 @@ class C4_5Classifier(BaseEstimator):
                 else:  # 离散属性
                     unique = np.unique(self.X[:, node.split_attr])
                     for u in unique:
-                        node.children[u] = C4_5Node(depth=node.depth + 1)
+                        node.children[u] = C4_5Node(depth=node.depth + 1,
+                                                    parent=node)
                         child_id_list = id_list[node_X[:,
                                                        node.split_attr] == u]
                         if len(child_id_list) == 0:  # 某特征在当前节点不存在
@@ -103,8 +108,6 @@ class C4_5Classifier(BaseEstimator):
                             stack.append((node.children[u], child_id_list,
                                           attr_set.copy()))
 
-        self.depth = max([leaf.depth for leaf in self.leaf_list])
-        self.n_leaf = len(self.leaf_list)
         return self
 
     def get_best_attr(self, id_list, attr_set):
@@ -204,6 +207,117 @@ class C4_5Classifier(BaseEstimator):
         y = np.array(test_y)
         pred = self.predict(X)
         return np.mean(y == pred)
+
+    # def pep_pruning(self) -> bool:
+    #     candidate_parent = set()
+    #     for leaf in self.leaf_list:
+    #         parent = leaf.parent
+    #         if parent.continuous and parent.children[
+    #                 0].value != None and parent.children[1].value != None:
+    #             candidate_parent.add(parent)
+    #         elif parent.continuous == False:
+    #             for child in parent.children.values():
+    #                 if child.value == None:
+    #                     continue
+    #             candidate_parent.add(parent)
+
+    #     candidate_parent = list(candidate_parent)
+    #     print(len(candidate_parent))
+    #     has_prune = False
+    #     while len(candidate_parent) > 0:
+    #         parent = candidate_parent.pop(0)  # 队列
+    #         sub_n_leaves = len(parent.train_list)  # 子树的训练样本数
+    #         error_sum = sum([
+    #             np.sum(self.y[leaf.train_list] != leaf.value) + 0.5
+    #             for leaf in parent.children
+    #         ])  # 误差和
+    #         error_ratio = error_sum / sub_n_leaves  # 误差率和
+    #         error_std = np.sqrt(error_sum * (1 - error_ratio))
+    #         pessimistic_error = error_sum + error_std  # 悲观误差值
+    #         post_prune_error = 1 - self.__prune_test(parent, self.X, self.y)
+    #         if post_prune_error * len(self.X) + 0.5 <= pessimistic_error:
+    #             print("修正误差：{}; 悲观误差：{}".format(
+    #                 post_prune_error,
+    #                 pessimistic_error,
+    #             ))
+    #             unique, counts = np.unique(
+    #                 self.y[parent.train_list],
+    #                 return_counts=True,
+    #             )
+    #             parent.value = unique[np.argmax(counts)]
+    #             self.leaf_list.append(parent)
+    #             self.leaf_list.remove(parent.children[0])
+    #             self.leaf_list.remove(parent.children[1])
+    #             parent = parent.parent
+    #             if parent.children[0].value != None and parent.children[
+    #                     1].value != None:
+    #                 candidate_parent.append(parent)
+
+    #             has_prune = True
+
+    #     return has_prune
+
+    def rep_pruning(self, valid_X, valid_y) -> bool:
+        # 一种低效的方法实现rep剪枝
+        valid_X = np.array(valid_X).reshape(-1, self.n_features)
+        valid_y = np.array(valid_y).reshape(-1)
+        candidate_parent = set()
+        for leaf in self.leaf_list:
+            parent = leaf.parent
+            if parent.continuous and parent.children[
+                    0].value != None and parent.children[1].value != None:
+                candidate_parent.add(parent)
+            elif parent.continuous == False:
+                for child in parent.children.values():
+                    if child.value == None:
+                        continue
+                candidate_parent.add(parent)
+
+        candidate_parent = list(candidate_parent)
+        score = self.score(valid_X, valid_y)
+        has_prune = False
+        while len(candidate_parent) > 0:
+            parent = candidate_parent.pop(0)  # 队列
+            new_score = self.__prune_test(parent, valid_X, valid_y)
+            if score <= new_score:
+                score = new_score
+                unique, counts = np.unique(
+                    self.y[parent.train_list],
+                    return_counts=True,
+                )
+                parent.value = unique[np.argmax(counts)]
+                self.leaf_list.append(parent)
+                self.leaf_list.remove(parent.children[0])
+                self.leaf_list.remove(parent.children[1])
+                parent = parent.parent
+                if parent.children[0].value != None and parent.children[
+                        1].value != None:
+                    candidate_parent.append(parent)
+
+                has_prune = True
+        return has_prune
+
+    def __prune_test(self, node, test_X, test_y):
+        "计算剪枝后树在数据集上的得分"
+        unique, counts = np.unique(self.y[node.train_list], return_counts=True)
+        node.value = unique[np.argmax(counts)]
+
+        leaf_list = self.leaf_list.copy()
+        # 模拟剪枝
+        self.leaf_list.remove(node.children[0])
+        self.leaf_list.remove(node.children[1])
+        self.leaf_list.append(node)
+        score = self.score(test_X, test_y)
+
+        # 恢复
+        node.value, self.leaf_list = None, leaf_list
+        return score
+
+    def get_n_leaves(self):
+        return len(self.leaf_list)
+
+    def get_depth(self):
+        return max([leaf.depth for leaf in self.leaf_list])
 
     @staticmethod
     def ent(y):
