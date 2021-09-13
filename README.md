@@ -264,4 +264,5 @@ tree_plot(model,
 
 剪枝前后的准确率分别为97.78%，100%，即泛化性能的提升：
 
-![pre](src/pre_prune.png)![pre](src/post_prune.png)
+<img src="src/pre_prune.png" alt="pre" style="zoom:60%;" />![pre](src/post_prune.png)
+
