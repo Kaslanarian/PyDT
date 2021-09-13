@@ -238,6 +238,30 @@ tree_plot(
 
 ## 剪枝
 
-目前只有C4.5支持REP剪枝，`wine`数据下，进行剪枝，前后的决策树：
+我们在ID3中加入了REP剪枝，C4.5则支持了PEP剪枝。
 
-<img src="src/pre_prune.png" alt="pre" style="zoom: 50%;" /><img src="src/post_prune.png" alt="pre" style="zoom: 50%;" />
+对IRIS数据集训练后的决策树进行PEP剪枝：
+
+```python
+iris = load_iris()
+model = C4_5Classifier()
+X, y = iris.data, iris.target
+train_X, test_X, train_y, test_y = train_test_split(X, y, train_size=0.7)
+model.fit(train_X, train_y)
+print(model.score(test_X, test_y))
+tree_plot(model,
+          filename="src/pre_prune",
+          feature_names=iris.feature_names,
+          target_names=iris.target_names)
+model.pep_pruning()
+print(model.score(test_X, test_y))
+tree_plot(model,
+          filename="src/post_prune",
+          feature_names=iris.feature_names,
+          target_names=iris.target_names,
+)
+```
+
+剪枝前后的准确率分别为97.78%，100%，即泛化性能的提升：
+
+![pre](src/pre_prune.png)![pre](src/post_prune.png)

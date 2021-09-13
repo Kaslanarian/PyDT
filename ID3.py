@@ -72,6 +72,7 @@ class ID3Classifier():
                         stack.append((node.children[u], copy_set))
 
         self.n_leaves = len(self.leaves_list)
+        return self
 
     def predict(self, X):
         X = np.array(X).reshape(-1, self.n_features)

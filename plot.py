@@ -55,7 +55,7 @@ def tree_plot(
                     attr = "x[{}]≤{}?".format(node.split_attr, node.threshold)
                 g.node('node{}'.format(node_id), label=attr, fontname=font)
                 g.node('node%d' % node_id, label=attr)
-                left, right = node.children
+                left, right = node.children.values()
                 g.node('node%d' % (i + 1))
                 g.node('node%d' % (i + 2))
                 g.edge('node%d' % node_id, 'node%d' % (i + 1), label="True")
