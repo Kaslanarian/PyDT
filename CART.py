@@ -1,3 +1,4 @@
+from functools import reduce
 import numpy as np
 from C4_5 import C4_5Node, C4_5Classifier
 
@@ -115,7 +116,7 @@ class CARTClassifier(C4_5Classifier):
                     index_right]
                 stack.append(node.children[False])
                 stack.append(node.children[True])
-                node.predict_list = None  # 将非叶节点的predict_list还原为none
+                # node.predict_list = None  # 将非叶节点的predict_list还原为none
 
         pred = np.zeros(len(X))
         for leaf in self.leaves_list:
@@ -270,6 +271,51 @@ class CARTRegressor(CARTClassifier):
         y = np.array(test_y)
         pred = self.predict(X)
         return -np.mean((y - pred)**2)
+
+    def rep_pruning(self, valid_X, valid_y):
+        valid_X = np.array(valid_X).reshape(-1, self.n_features)
+        valid_y = np.array(valid_y).reshape(-1)
+        pred_valid = self.predict(valid_X)
+
+        frontier = set()
+        for leaf in self.leaves_list:
+            parent: CARTNode = leaf.parent
+            if parent != None and reduce(
+                    lambda x, y: x and y,
+                [child.value != None for child in parent.children.values()]):
+                frontier.add(parent)
+        frontier = list(frontier)
+
+        while len(frontier) > 0:
+            parent = frontier.pop(0)
+            # 如果剪枝，parent对应的值
+            parent_value = np.mean(self.y[parent.sample_list])
+            # 剪枝前的验证集上误差
+            if len(parent.predict_list) == 0:  # 样本未经过该子树，跳过
+                continue
+            else:
+                pre_error = np.mean(
+                    (pred_valid - valid_y)[parent.predict_list]**2)
+            # 剪枝后的验证集上误差
+            post_error = np.mean(
+                (valid_y[parent.predict_list] - parent_value)**2)
+            if pre_error >= post_error:
+                for child in parent.children.values():
+                    self.leaves_list.remove(child)
+                self.leaves_list.append(parent)
+                parent.children.clear()
+                parent.value = parent_value
+                parent = parent.parent
+                if parent == None:  # 根节点
+                    break
+                if reduce(
+                        lambda x, y: x and y,
+                    [
+                        child.value != None
+                        for child in parent.children.values()
+                    ],
+                ):
+                    frontier.append(parent)
 
     def __get_best_attr(self, id_list, attr_set):
         X, y = self.X[id_list], self.y[id_list]

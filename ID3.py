@@ -89,7 +89,6 @@ class ID3Classifier():
                     child.predict_list = node.predict_list[
                         data[:, node.split_attr] == attr_value]
                     stack.append(child)
-                node.predict_list = None  # 将非叶节点的predict_list还原为none
 
         pred = np.zeros(len(X))
         for leaf in self.leaves_list:

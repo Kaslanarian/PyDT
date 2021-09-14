@@ -238,7 +238,7 @@ tree_plot(
 
 ## 剪枝
 
-我们在ID3中加入了REP剪枝，C4.5则支持了PEP剪枝。
+在ID3和CART回归中加入了REP剪枝，C4.5则支持了PEP剪枝。
 
 对IRIS数据集训练后的决策树进行PEP剪枝：
 

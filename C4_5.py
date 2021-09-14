@@ -159,7 +159,7 @@ class C4_5Classifier(BaseEstimator):
                         child.predict_list = node.predict_list[
                             data[:, node.split_attr] == attr_value]
                         stack.append(child)
-                node.predict_list = None  # 将非叶节点的predict_list还原为none
+                # node.predict_list = None  # 将非叶节点的predict_list还原为none
 
         pred = np.zeros(len(X))
         for leaf in self.leaves_list:
@@ -234,10 +234,10 @@ class C4_5Classifier(BaseEstimator):
         return np.mean(y == pred)
 
     def get_n_leaves(self):
-        return len(self.leaf_list)
+        return len(self.leaves_list)
 
     def get_depth(self):
-        return max([leaf.depth for leaf in self.leaf_list])
+        return max([leaf.depth for leaf in self.leaves_list])
 
     @staticmethod
     def ent(y):
