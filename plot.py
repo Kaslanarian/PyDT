@@ -24,13 +24,13 @@ def tree_plot(
         if node.value == None:
             if type(model) in {CARTClassifier, CARTRegressor}:
                 if feature_names is not None:
-                    attr = "{}{}{:.3f}?".format(
+                    attr = "{}{}{}?".format(
                         feature_names[node.split_attr],
                         "≤" if node.continuous else "=",
                         node.threshold,
                     )
                 else:
-                    attr = "x[{}]{}{:.3f}?".format(
+                    attr = "x[{}]{}{}?".format(
                         node.split_attr,
                         "≤" if node.continuous else "=",
                         node.threshold,
