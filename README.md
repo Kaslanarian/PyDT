@@ -13,6 +13,8 @@
     - [回归树](#回归树)
   - [调参](#调参)
   - [剪枝](#剪枝)
+    - [PEP剪枝](#pep剪枝)
+    - [CCP剪枝](#ccp剪枝)
 
 ## ID3
 
@@ -242,6 +244,8 @@ tree_plot(
 
 剪枝参考: <https://welts.xyz/2021/09/27/prune/>
 
+### PEP剪枝
+
 对IRIS数据集训练后的决策树进行PEP剪枝：
 
 ```python
@@ -267,6 +271,8 @@ tree_plot(model,
 剪枝前后的准确率分别为97.78%，100%，即泛化性能的提升：
 
 <img src="src/pre_prune.png" alt="pre" style="zoom:60%;" />![pre](src/post_prune.png)
+
+### CCP剪枝
 
 对IRIS数据集训练后的决策树进行CCP剪枝：
 
