@@ -172,7 +172,7 @@ class C4_5Classifier(BaseEstimator):
         for leaf in self.leaves_list:
             leaf.leaves.append(self.leaves_list.index(leaf))
 
-        frontier = self.__calculate_frontier()
+        frontier = self.calculate_frontier()
         leaf_list = self.leaves_list.copy()
         while len(frontier) > 0:
             parent: C4_5Node = frontier.pop(0)
@@ -322,7 +322,7 @@ class C4_5Classifier(BaseEstimator):
                 break
         return item
 
-    def __calculate_frontier(self) -> set:
+    def calculate_frontier(self) -> set:
         candidate_parent = set()
         for leaf in self.leaves_list:
             parent = leaf.parent
