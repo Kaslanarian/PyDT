@@ -238,7 +238,9 @@ tree_plot(
 
 ## 剪枝
 
-在ID3和CART回归中加入了REP剪枝，C4.5则支持了PEP剪枝。
+在ID3和CART回归中加入了REP剪枝，C4.5则支持了PEP剪枝，CART分类树使用的是CCP剪枝。
+
+剪枝参考: <https://welts.xyz/2021/09/27/prune/>
 
 对IRIS数据集训练后的决策树进行PEP剪枝：
 
@@ -266,3 +268,8 @@ tree_plot(model,
 
 <img src="src/pre_prune.png" alt="pre" style="zoom:60%;" />![pre](src/post_prune.png)
 
+对IRIS数据集训练后的决策树进行CCP剪枝：
+
+剪枝前后：
+
+<img src="src/pre_ccp.png" alt="pre" style="zoom:40%;" /><img src="src/post_ccp.png" alt="post" style="zoom:50%;" />

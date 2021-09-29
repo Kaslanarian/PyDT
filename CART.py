@@ -17,6 +17,9 @@ class CARTNode(C4_5Node):
                          depth=depth,
                          parent=parent,
                          continuous=continuous)
+        self.Ct = None
+        self.CT = None
+        self.gt = None
 
 
 class CARTClassifier(C4_5Classifier):
@@ -50,13 +53,13 @@ class CARTClassifier(C4_5Classifier):
             node_X, node_y = self.X[node.sample_list], self.y[node.sample_list]
             unique, counts = np.unique(node_y, return_counts=True)
             prior = unique[np.argmax(counts)]
-
             if len(unique, ) == 1 or len(
                     attr_set,
             ) == 0 or len(np.unique(node_X[:, attr_set], axis=0)) == 1 or len(
                     node.sample_list
             ) <= self.min_samples_split or node.depth >= self.max_depth:
                 node.value = prior
+                node.CT = node.Ct = (node_y != prior).mean()
                 self.leaves_list.append(node)
             else:
                 node.split_attr, (_, node.threshold) = self.__get_best_attr(
@@ -78,6 +81,7 @@ class CARTClassifier(C4_5Classifier):
 
                 if min(len(left), len(right)) < self.min_samples_leaf:
                     node.value = prior
+                    node.CT = node.Ct = (node_y != prior).mean()
                     self.leaves_list.append(node)
                     continue
 
@@ -89,8 +93,8 @@ class CARTClassifier(C4_5Classifier):
                 stack.append((node.children[False], attr_set.copy()))
                 stack.append((node.children[True], attr_set.copy()))
 
-        self.depth = max([leaf.depth for leaf in self.leaves_list])
         self.n_leaf = len(self.leaves_list)
+        self.depth = max([leaf.depth for leaf in self.leaves_list])
         return self
 
     def predict(self, X):
@@ -123,6 +127,61 @@ class CARTClassifier(C4_5Classifier):
             if leaf.predict_list is not None:
                 pred[leaf.predict_list] = leaf.value
         return pred
+
+    def ccp_pruning(self, alpha=0.5):
+        for leaf in self.leaves_list:
+            leaf.leaves.append(self.leaves_list.index(leaf))
+
+        frontier = self.calculate_frontier()
+        leaf_list = self.leaves_list.copy()
+        while len(frontier) > 0:
+            # 自下往上计算gt
+            parent: CARTNode = frontier.pop(0)
+            error_num = 0  # 子树上的误分数
+            for child in parent.children.values():
+                error_num += child.CT * len(child.sample_list)
+                parent.leaves.extend(child.leaves)
+                leaf_list.remove(child)
+
+            # CCP剪枝所需要的信息
+            node_y = self.y[parent.sample_list]
+            unique, counts = np.unique(node_y, return_counts=True)
+            prior = unique[np.argmax(counts)]
+            parent.Ct = (node_y != prior).mean()
+            parent.CT = error_num / len(parent.sample_list)
+            parent.gt = (parent.Ct - parent.CT) / (len(parent.leaves) - 1)
+
+            leaf_list.append(parent)
+            parent = parent.parent
+            if parent is None:
+                break
+            elif reduce(
+                    lambda x, y: x and y,
+                [(child in leaf_list) for child in parent.children.values()],
+            ):
+                frontier.append(parent)
+
+        frontier = self.calculate_frontier()
+        while len(frontier) > 0:
+            parent: CARTNode = frontier.pop(0)
+            if parent.gt <= alpha:
+                node_y = self.y[parent.sample_list]
+                unique, counts = np.unique(node_y, return_counts=True)
+                prior = unique[np.argmax(counts)]
+                parent.value = prior
+                for child in parent.children.values():
+                    self.leaves_list.remove(child)
+                self.leaves_list.append(parent)
+                parent.children.clear()
+                parent = parent.parent
+                if parent is None:
+                    break
+                elif reduce(
+                        lambda x, y: x and y,
+                    [(child in leaf_list)
+                     for child in parent.children.values()],
+                ):
+                    frontier.append(parent)
 
     def score(self, test_X, test_y):
         X = np.array(test_X).reshape(-1, self.n_features)
@@ -181,6 +240,9 @@ class CARTClassifier(C4_5Classifier):
         )[1].astype(float)
         dist = counts / np.sum(counts)
         return 1 - np.sum(dist**2)
+
+    def calculate_frontier(self) -> set:
+        return super().calculate_frontier()
 
 
 class CARTRegressor(CARTClassifier):
