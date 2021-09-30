@@ -1,4 +1,4 @@
-# DecisionTree
+# PyDecisionTree
 
 决策树分类与回归模型，以及可视化
 
